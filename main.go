@@ -10,6 +10,8 @@ al igual que las conexiones.
 por el momento solo se puede hacer consultar ya sea por id o
 ver todos los datos
 
+falta mover las funciones a otro archivo y cosas así xd
+
 ***********************/
 import (
 	"database/sql"
@@ -79,17 +81,23 @@ func getUsuario(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
+	//aquí ejecutamos la sentencia
 	rows, err := db.Query("SELECT * FROM usuarios WHERE id = ?", params["id"])
 
+	//error en la sentencia
 	if err != nil {
 		panic(err.Error())
 	}
 
+	//iteramos el resultado de la consulta
 	for rows.Next() {
+		//construimos la variable USER con el resultado
 		err := rows.Scan(&user.ID, &user.NOMBRE, &user.EDAD)
+		//verificamos si hay algun error
 		if err != nil {
 			panic(err.Error())
 		} else {
+			//convertimos en JSON el resultado y lo enviamos
 			json.NewEncoder(w).Encode(user)
 			return
 		}
@@ -111,20 +119,24 @@ func getUsuarios(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for rows.Next() {
+		//creamos una variable de la estructura USUARIO en cada iteracion
 		var user Usuario
 		err := rows.Scan(&user.ID, &user.NOMBRE, &user.EDAD)
 		if err != nil {
 			panic(err.Error())
 		} else {
+			//agregamos ese usuario a un arreglo
 			usuarios = append(usuarios, user)
 		}
 	}
 
+	//convertimos ese arreglo en JSON y lo enviamos
 	json.NewEncoder(w).Encode(usuarios)
 
 }
 
 func main() {
+	//iniciamos rourter y creamos las rutas
 	router := mux.NewRouter()
 	router.HandleFunc("/usuarios", getUsuarios).Methods("GET")
 	router.HandleFunc("/usuario/{id}", getUsuario).Methods("GET")
