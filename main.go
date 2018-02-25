@@ -168,6 +168,7 @@ func createUsuario(w http.ResponseWriter, r *http.Request) {
 }
 
 func showForm(w http.ResponseWriter, r *http.Request) {
+	//esto se supone que permite usar un html de template pero no me sale xd
 	// t, err := template.ParseFiles("index.html")
 
 	// var mensaje = "error"
