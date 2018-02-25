@@ -16,6 +16,7 @@ falta mover las funciones a otro archivo y cosas así xd
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -30,10 +31,14 @@ type Usuario struct {
 	EDAD   int    `json:"edad, omitempty"`
 }
 
+type PageVariables struct {
+	PageTitle string
+}
+
 //funcion para realizar inserciones dentro de la base de datos
 func insert(nombre string, edad int) {
 	//conexion con la base de datos
-	db, err := sql.Open("mysql", "usuario:contraseña@/DataBase")
+	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
 
 	//verifica si no hay un error al conectar
 	if err != nil {
@@ -67,7 +72,7 @@ func insert(nombre string, edad int) {
 //funcion para obtener un usuario
 func getUsuario(w http.ResponseWriter, r *http.Request) {
 	//se insertan los datos necesarios para la conexion
-	db, err := sql.Open("mysql", "usuario:contraseña@/DataBase")
+	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
 
 	//recuperamos los parametros que enviamos al acceder a la direccion
 	//en este caso solo el ID
@@ -106,7 +111,7 @@ func getUsuario(w http.ResponseWriter, r *http.Request) {
 
 func getUsuarios(w http.ResponseWriter, r *http.Request) {
 	var usuarios []Usuario
-	db, err := sql.Open("mysql", "usuario:contraseña@/DataBase")
+	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
 
 	if err != nil {
 		panic(err.Error())
@@ -135,12 +140,60 @@ func getUsuarios(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func createUsuario(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer db.Close()
+
+	inser, err := db.Prepare("INSERT INTO usuarios(nombre, edad) VALUES (?,?)")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer inser.Close()
+
+	_, er := inser.Exec(r.FormValue("nombre"), r.FormValue("edad"))
+
+	if er != nil {
+		panic(er.Error())
+	} else {
+		fmt.Println("registro correcto :)")
+	}
+
+}
+
+func showForm(w http.ResponseWriter, r *http.Request) {
+	// t, err := template.ParseFiles("index.html")
+
+	// var mensaje = "error"
+
+	// MyPageVariables := PageVariables{
+	// 	PageTitle: mensaje,
+	// }
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
+
+	// err = t.Execute(w, MyPageVariables)
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
+}
+
 func main() {
 	//iniciamos rourter y creamos las rutas
 	router := mux.NewRouter()
 	router.HandleFunc("/usuarios", getUsuarios).Methods("GET")
 	router.HandleFunc("/usuario/{id}", getUsuario).Methods("GET")
-	// router.HandleFunc("/usuario/{id}", createUsuario).Methods("POST")
+	router.HandleFunc("/usuario/create", createUsuario).Methods("POST")
+	router.HandleFunc("/usuario/create", showForm).Methods("GET")
 	// router.HandleFunc("/usuario/{id}", updateUsuario).Methods("POST")
 	// router.HandleFunc("/usuario/{id}", deleteUsuario).Methods("DELETE")
 
