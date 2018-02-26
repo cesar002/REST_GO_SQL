@@ -17,6 +17,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -38,7 +39,7 @@ type PageVariables struct {
 //funcion para realizar inserciones dentro de la base de datos
 func insert(nombre string, edad int) {
 	//conexion con la base de datos
-	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
+	db, err := sql.Open("mysql", "usuario:contraseña@/base_datos")
 
 	//verifica si no hay un error al conectar
 	if err != nil {
@@ -72,7 +73,7 @@ func insert(nombre string, edad int) {
 //funcion para obtener un usuario
 func getUsuario(w http.ResponseWriter, r *http.Request) {
 	//se insertan los datos necesarios para la conexion
-	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
+	db, err := sql.Open("mysql", "usuario:contraseña@/base_datos")
 
 	//recuperamos los parametros que enviamos al acceder a la direccion
 	//en este caso solo el ID
@@ -111,7 +112,7 @@ func getUsuario(w http.ResponseWriter, r *http.Request) {
 
 func getUsuarios(w http.ResponseWriter, r *http.Request) {
 	var usuarios []Usuario
-	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
+	db, err := sql.Open("mysql", "usuario:contraseña@/base_datos")
 
 	if err != nil {
 		panic(err.Error())
@@ -140,8 +141,36 @@ func getUsuarios(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func deleteUsuario(w http.ResponseWriter, r *http.Request) {
+	parms := mux.Vars(r)
+
+	db, err := sql.Open("mysql", "usuario:contraseña@/base_datos")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer db.Close()
+
+	del, err := db.Prepare("DELETE FROM usuarios WHERE id=?")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer del.Close()
+
+	_, err = del.Exec(parms["id"])
+
+	if err != nil {
+		panic(err.Error())
+	} else {
+		fmt.Println("usuario borrado")
+	}
+}
+
 func createUsuario(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:gundam000@/api_rest")
+	db, err := sql.Open("mysql", "usuario:contraseña@/base_datos")
 
 	if err != nil {
 		panic(err.Error())
@@ -157,10 +186,10 @@ func createUsuario(w http.ResponseWriter, r *http.Request) {
 
 	defer inser.Close()
 
-	_, er := inser.Exec(r.FormValue("nombre"), r.FormValue("edad"))
+	_, err = inser.Exec(r.FormValue("nombre"), r.FormValue("edad"))
 
-	if er != nil {
-		panic(er.Error())
+	if err != nil {
+		panic(err.Error())
 	} else {
 		fmt.Println("registro correcto :)")
 	}
@@ -168,6 +197,13 @@ func createUsuario(w http.ResponseWriter, r *http.Request) {
 }
 
 func showForm(w http.ResponseWriter, r *http.Request) {
+	// t, err := template.ParseFiles("index.html") // Parse template file.
+	t := template.New("view.html")
+	t, err := t.ParseFiles("view.html")
+	log.Println(t)
+	t.ExecuteTemplate(w, "view.html", nil)
+	log.Println("rendering template")
+	log.Println(err)
 	//esto se supone que permite usar un html de template pero no me sale xd
 	// t, err := template.ParseFiles("index.html")
 
@@ -194,9 +230,9 @@ func main() {
 	router.HandleFunc("/usuarios", getUsuarios).Methods("GET")
 	router.HandleFunc("/usuario/{id}", getUsuario).Methods("GET")
 	router.HandleFunc("/usuario/create", createUsuario).Methods("POST")
-	router.HandleFunc("/usuario/create", showForm).Methods("GET")
+	router.HandleFunc("/usuario/form", showForm)
 	// router.HandleFunc("/usuario/{id}", updateUsuario).Methods("POST")
-	// router.HandleFunc("/usuario/{id}", deleteUsuario).Methods("DELETE")
+	router.HandleFunc("/usuario/{id}/delete", deleteUsuario).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
